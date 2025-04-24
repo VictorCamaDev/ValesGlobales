@@ -1,10 +1,13 @@
 // Configuración centralizada para las URLs de API y otras variables de entorno
 
 // URL base de la API
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:44308/api"
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 // Endpoints específicos
 export const API_ENDPOINTS = {
+  // Endpoints para obtencion de datos
+  OBTENER_TECNICOS: `${API_BASE_URL}/Usuario/ObtenerTecnicos`,
+  OBTENER_CULTIVOS: `${API_BASE_URL}/Usuario/ObtenerCultivos`,
   // Endpoints de usuario
   VALIDAR_RTC: `${API_BASE_URL}/Usuario/ValidarDocumentoRTC`,
   OBTENER_USUARIO_RTC: `${API_BASE_URL}/Usuario/ObtenerUsuarioRTC`,
@@ -18,7 +21,7 @@ export const API_ENDPOINTS = {
   // Endpoints externos
   DNI_API: "https://apiperu.dev/api/dni",
   DNI_API_TOKEN:
-    process.env.NEXT_PUBLIC_DNI_API_TOKEN || "958d7d42025f7413026061009022e7997f6815ea495830a0b3bb556f423cb5e3",
+    process.env.NEXT_PUBLIC_DNI_API_TOKEN,
 }
 
 // Otras configuraciones

@@ -1,58 +1,73 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ValeProvider, useValeContext } from "@/features/vales/context/vale-context"
-import { ProductoCard } from "@/components/ui/producto-card"
-import { ProductoAutocomplete } from "@/components/ui/producto-autocomplete"
-import { getProductos } from "@/features/vales/services/producto-service"
-import type { ProductoDTO } from "@/types/producto.types"
+import { useState } from "react";
+import {
+  ValeProvider,
+  useValeContext,
+} from "@/features/vales/context/vale-context";
+import { ProductoCard } from "@/components/ui/producto-card";
+import { ProductoAutocomplete } from "@/components/ui/producto-autocomplete";
+import { getProductos } from "@/features/vales/services/producto-service";
+import type { ProductoDTO } from "@/types/producto.types";
 
 export function DetalleGuiaForm() {
   // Asegúrate de que el componente tenga acceso al vale
-  const { productos, addProducto, isLoading, setIsLoading, vale } = useValeContext()
-  const [showAutocomplete, setShowAutocomplete] = useState(false)
-  const [productosDisponibles, setProductosDisponibles] = useState<ProductoDTO[]>([])
-  const [productosYaCargados, setProductosYaCargados] = useState(false)
+  const { productos, addProducto, isLoading, setIsLoading, vale } =
+    useValeContext();
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [productosDisponibles, setProductosDisponibles] = useState<
+    ProductoDTO[]
+  >([]);
+  const [productosYaCargados, setProductosYaCargados] = useState(false);
 
   // Modificar la función handleShowAutocomplete para usar idZona y nombreZona
   const handleShowAutocomplete = async () => {
     // Solo cargar productos si aún no se han cargado
     if (!productosYaCargados) {
       try {
-        setIsLoading("productos")
+        setIsLoading("productos");
 
         // Verificar que tenemos los datos de zona necesarios
         if (!vale.idLugarCanje || !vale.lugarCanje) {
-          console.warn("No hay información de zona disponible para cargar productos")
-          setIsLoading("")
-          return
+          console.warn(
+            "No hay información de zona disponible para cargar productos"
+          );
+          setIsLoading("");
+          return;
         }
 
-        const data = await getProductos(vale.idLugarCanje, vale.lugarCanje)
+        const data = await getProductos(vale.idLugarCanje, vale.lugarCanje);
         // console.table(data)
-        setProductosDisponibles(data)
-        setProductosYaCargados(true)
+        setProductosDisponibles(data);
+        setProductosYaCargados(true);
       } catch (error) {
-        console.error("Error al cargar productos:", error)
+        console.error("Error al cargar productos:", error);
       } finally {
-        setIsLoading("")
+        setIsLoading("");
       }
     }
-    setShowAutocomplete(true)
-  }
+    setShowAutocomplete(true);
+  };
 
   const handleAddProduct = (product: ProductoDTO) => {
-    addProducto(product)
-    setShowAutocomplete(false)
-  }
+    if (productos.length >= 4) return;
+    addProducto(product);
+    setShowAutocomplete(false);
+  };
 
   return (
     <div className="space-y-0">
-      <h2 className="section-header">LISTA DE PRODUCTOS</h2>
+      <h2 className="section-header">
+        LISTA DE PRODUCTOS (Máximo 4 productos)
+      </h2>
       <div className="section-content">
         <div className="mb-6">
           {!showAutocomplete ? (
-            <button onClick={handleShowAutocomplete} className="btn btn-primary">
+            <button
+              onClick={handleShowAutocomplete}
+              className="btn btn-primary"
+              disabled={productos.length >= 4}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -77,6 +92,11 @@ export function DetalleGuiaForm() {
               onCancel={() => setShowAutocomplete(false)}
             />
           )}
+          {productos.length >= 4 && (
+            <p className="text-sm text-red-500 mt-5 bg-red-50 p-2 rounded-full text-center">
+              Solo puede añadir hasta 4 productos.
+            </p>
+          )}
         </div>
 
         {isLoading === "productos" ? (
@@ -85,7 +105,7 @@ export function DetalleGuiaForm() {
           </div>
         ) : productos.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {productos.map((producto) => (
+            {[...productos].reverse().map((producto) => (
               <ProductoCard key={producto.id} producto={producto} />
             ))}
           </div>
@@ -109,10 +129,12 @@ export function DetalleGuiaForm() {
               <line x1="12" x2="12" y1="22" y2="12" />
             </svg>
             <p className="text-gray-500">No hay productos agregados</p>
-            <p className="text-sm text-gray-400 mt-1">Haga clic en "Añadir Producto" para comenzar</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Haga clic en "Añadir Producto" para comenzar
+            </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

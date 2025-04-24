@@ -13,12 +13,10 @@ export default function ConfirmacionPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [pdfGenerated, setPdfGenerated] = useState(false)
 
-  // Obtener el número de vale de la URL
   const numero = searchParams.get("numero") || ""
-  const cliente = searchParams.get("cliente") || "No disponible"
+  const idzona = searchParams.get("empresa") || ""
   const dni = searchParams.get("dni") || "No disponible"
 
-  // Función para generar el PDF desde la API
   const generatePDFFromAPI = async () => {
     if (!numero) {
       toast.error("No se encontró el número de vale")
@@ -27,7 +25,7 @@ export default function ConfirmacionPage() {
 
     setIsGeneratingPDF(true)
     try {
-      await generarPDFValeDesdeAPI(numero)
+      await generarPDFValeDesdeAPI(numero, idzona)
       setPdfGenerated(true)
       toast.success("PDF generado correctamente")
     } catch (error) {
@@ -38,12 +36,11 @@ export default function ConfirmacionPage() {
     }
   }
 
-  // Generar PDF automáticamente al cargar la página
   useEffect(() => {
     if (!pdfGenerated && numero) {
       const timer = setTimeout(() => {
         generatePDFFromAPI()
-      }, 1000) // Pequeño retraso para asegurar que la página esté completamente cargada
+      }, 2000)
 
       return () => clearTimeout(timer)
     }
@@ -65,10 +62,6 @@ export default function ConfirmacionPage() {
 
         <Button onClick={() => router.push("/")} variant="outline">
           Ir al inicio
-        </Button>
-
-        <Button variant="outline" onClick={() => router.push("/vale/nuevo")}>
-          Crear otro vale
         </Button>
       </div>
 

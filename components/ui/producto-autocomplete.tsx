@@ -92,7 +92,7 @@ export function ProductoAutocomplete({ productos, onSelect, onCancel }: Producto
               <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-2 text-left">Producto</th>
-                  <th className="px-4 py-2 text-right">Precio</th>
+                  <th className="px-4 py-2 text-right">Descuento</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">

@@ -69,23 +69,36 @@ export function ValeProvider({ children }: { children: ReactNode }) {
   }
 
   const addProducto = (producto: ProductoDTO) => {
-    const existingProductIndex = productos.findIndex((p) => p.id === producto.id)
-
+    const existingProductIndex = productos.findIndex((p) => p.id === producto.id);
+  
     if (existingProductIndex >= 0) {
-      const updatedProductos = [...productos]
-      updatedProductos[existingProductIndex].cantidad += 1
-      setProductos(updatedProductos)
+      const updatedProductos = [...productos];
+      const currentCantidad = updatedProductos[existingProductIndex].cantidad;
+  
+      if (currentCantidad >= 12) {
+        toast.error("No puedes agregar más de 12 unidades de este producto.");
+        return;
+      }
+  
+      updatedProductos[existingProductIndex].cantidad = currentCantidad + 1;
+      setProductos(updatedProductos);
     } else {
+      if (productos.length >= 4) {
+        toast.error("Solo puedes añadir hasta 4 productos distintos.");
+        return;
+      }
+  
       setProductos([
         ...productos,
         {
           ...producto,
           cantidad: 1,
-          descuento: producto.precio // Default discount
+          descuento: producto.precio,
         },
-      ])
+      ]);
     }
-  }
+  };
+  
 
   const updateProductoCantidad = (id: string, cantidad: number) => {
     setProductos(productos.map((producto) => (producto.id === id ? { ...producto, cantidad } : producto)))
@@ -169,7 +182,7 @@ export function ValeProvider({ children }: { children: ReactNode }) {
 
         // Redirigir a la página de confirmación con todos los datos necesarios
         router.push(
-          `/vale/confirmacion?numero=${result.valeNumber}&empresa=${vale.codigoEmpresa}&rtc=${vale.codigoRTC}&rtcNombre=${encodeURIComponent(vale.nombreRTC)}&cliente=${encodeURIComponent(vale.nombreAgricultor)}&dni=${vale.dni}&productos=${productosParam}&descuentoTotal=${descuentoTotal}&totalItems=${totalItems}`,
+          `/vale/confirmacion?numero=${result.valeNumber}&empresa=${vale.idLugarCanje}&rtc=${vale.codigoRTC}&rtcNombre=${encodeURIComponent(vale.nombreRTC)}&cliente=${encodeURIComponent(vale.nombreAgricultor)}&dni=${vale.dni}&productos=${productosParam}&descuentoTotal=${descuentoTotal}&totalItems=${totalItems}`,
         )
       } else {
         toast.error("No se pudo guardar el vale. Intente nuevamente.")

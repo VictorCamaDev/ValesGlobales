@@ -61,7 +61,7 @@ export function DatosValeForm() {
             </label>
             <input
               id="numero"
-              type="text"
+              type="number"
               value={vale.numero || ""}
               onChange={(e) => updateVale({ numero: e.target.value })}
               className="form-input"

@@ -6,6 +6,19 @@ interface ValidateRTCResponse {
   message: string
 }
 
+export async function ObtenerTecnicos() {
+  const res = await fetch(API_ENDPOINTS.OBTENER_TECNICOS)
+  if (!res.ok) throw new Error("No se pudieron obtener los tecnicos")
+  return await res.json()
+}
+
+export async function obtenerCultivos() {
+  const res = await fetch(API_ENDPOINTS.OBTENER_CULTIVOS);
+  if (!res.ok) throw new Error("No se pudieron obtener los cultivos");
+  return res.json();
+}
+
+
 export async function validateRTC(rtcDni: string): Promise<ValidateRTCResponse> {
   try {
     const response = await fetch(API_ENDPOINTS.VALIDAR_RTC, {

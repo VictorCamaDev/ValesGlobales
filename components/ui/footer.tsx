@@ -87,7 +87,7 @@ export function Footer() {
               <div className="space-y-1">
                 <div className="flex justify-between gap-4 font-bold">
                   <span className="text-green-600">Total Descuento:</span>
-                  <span className="text-green-600">- S/ {subtotal.toFixed(2)}</span>
+                  <span className="text-green-600">S/ {subtotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

@@ -134,6 +134,7 @@ export function ProductoCard({ producto }: ProductoCardProps) {
               <button
                 className="h-8 w-8 flex items-center justify-center rounded-md border border-gray-200 bg-white hover:bg-gray-50"
                 onClick={handleIncrement}
+                disabled={producto.cantidad == 12}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -150,7 +151,7 @@ export function ProductoCard({ producto }: ProductoCardProps) {
                   <path d="M5 12h14" />
                   <path d="M12 5v14" />
                 </svg>
-              </button>
+              </button>              
             </div>
           )}
         </div>

@@ -1,24 +1,42 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useValeContext } from "@/features/vales/context/vale-context"
-import { useState } from "react"
+import { useValeContext } from "@/features/vales/context/vale-context";
+import { useState } from "react";
 
 export function ObservacionesForm() {
-  const { vale, updateVale } = useValeContext()
-  const [autorizaDatos, setAutorizaDatos] = useState(false)
+  const { vale, updateVale } = useValeContext();
+  const [autorizaDatos, setAutorizaDatos] = useState(false);
 
   const handleAutorizacionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked
-    setAutorizaDatos(checked)
-    updateVale({ tratamientoDatos: checked })
-  }
+    const checked = e.target.checked;
+    setAutorizaDatos(checked);
+    updateVale({ tratamientoDatos: checked });
+  };
 
   return (
     <div className="space-y-0">
       <h2 className="section-header">OBSERVACIONES</h2>
       <div className="section-content">
+        <div className="form-group">
+          <label htmlFor="observaciones" className="form-label">
+            Comentarios
+          </label>
+          <div className="relative">
+            <input
+              id="observaciones"
+              type="text"
+              value={vale.observaciones}
+              onChange={(e) => {
+                updateVale({ observaciones: e.target.value });
+              }}
+              placeholder="Ingrese producto expuesto en charla..."
+              className="form-input"
+              required
+            />
+          </div>
+        </div>
 
         <div className="form-group mt-4">
           <label className="form-label">Tratamiento de datos personales</label>
@@ -30,10 +48,11 @@ export function ObservacionesForm() {
               onChange={handleAutorizacionChange}
               required
             />
-            Autorizo el tratamiento de mis datos personales para el envío de información que se crea necesaria
+            Autorizo el tratamiento de mis datos personales para el envío de
+            información que se crea necesaria
           </label>
         </div>
       </div>
     </div>
-  )
+  );
 }
