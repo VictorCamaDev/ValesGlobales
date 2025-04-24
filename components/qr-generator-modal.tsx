@@ -1,13 +1,18 @@
 "use client";
 
 import type React from "react";
-import { generarValePDF } from "./pdfTemplates"
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { jsPDF } from "jspdf";
+import { generarValePDF } from "./pdfTemplates";
+import {
+  validateRTC,
+  validateExponente,
+  ObtenerTecnicos
+} from "@/features/vales/services/api-service";
 
+// UI Components
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,52 +31,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  validateRTC,
-  validateExponente,
-} from "@/features/vales/services/api-service";
 
 interface QrGeneratorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function QrGeneratorModal({
-  open,
-  onOpenChange,
-}: QrGeneratorModalProps) {
-  const [qrValue, setQrValue] = useState("");
-  const [qrGenerated, setQrGenerated] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const qrRef = useRef<HTMLDivElement>(null);
+const EMPRESAS = [
+  { id: "1", nombre: "Silvestre" },
+  { id: "2", nombre: "Neoagrum" },
+];
 
-  // Estado simple para los campos del formulario
+export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) {
   const [empresa, setEmpresa] = useState("");
   const [rtcDni, setRtcDni] = useState("");
   const [exponenteDni, setExponenteDni] = useState("");
+  const [expositorDni, setExpositorDNI] = useState("");
   const [numeroVale, setNumeroVale] = useState("");
+
   const [rtcNombre, setRtcNombre] = useState("");
   const [expoNombre, setExpoNombre] = useState("");
 
-  // Estado para errores de validación
+  const [qrValue, setQrValue] = useState("");
+  const [qrGenerated, setQrGenerated] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const [tecnicos, setTecnicos] = useState<any[]>([]);
+  const [loadingTecnicos, setLoadingTecnicos] = useState(true);
+
+  const [isValidating, setIsValidating] = useState(false);
   const [errors, setErrors] = useState({
     empresa: "",
     rtcDni: "",
-    exponenteDni: "",
+    expositorDni: "",
     numeroVale: "",
   });
 
-  const empresas = [
-    { id: "1", nombre: "Silvestre" },
-    { id: "2", nombre: "Neoagrum" },
-  ];
+  useEffect(() => {
+    const fetchTecnicos = async () => {
+      try {
+        const data = await ObtenerTecnicos();
+        setTecnicos(data);
+      } catch (error) {
+        console.error("Error al obtener los técnicos", error);
+        toast.error("Error al obtener los técnicos");
+      } finally {
+        setLoadingTecnicos(false);
+      }
+    };
 
-  // Función de validación manual
+    fetchTecnicos();
+  }, []);
+
   const validateForm = () => {
     const newErrors = {
       empresa: "",
       rtcDni: "",
-      exponenteDni: "",
+      expositorDni: "",
       numeroVale: "",
     };
 
@@ -81,14 +97,12 @@ export function QrGeneratorModal({
       newErrors.empresa = "Por favor seleccione una empresa";
       isValid = false;
     }
-
     if (!rtcDni || rtcDni.length !== 8) {
       newErrors.rtcDni = "El DNI debe tener 8 dígitos";
       isValid = false;
     }
-
-    if (!exponenteDni || exponenteDni.length !== 8) {
-      newErrors.exponenteDni = "El DNI debe tener 8 dígitos";
+    if (!expositorDni || expositorDni.length !== 8) {
+      newErrors.expositorDni = "El DNI debe tener 8 dígitos";
       isValid = false;
     }
 
@@ -98,106 +112,83 @@ export function QrGeneratorModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsValidating(true);
 
     try {
-      // Validar RTC con la API
-      const rtcValidation = await validateRTC(rtcDni);
-      const ExpoValidation = await validateExponente(exponenteDni);
+      const [rtcValidation, expoValidation] = await Promise.all([
+        validateRTC(rtcDni),
+        validateExponente(exponenteDni),
+      ]);
 
       if (!rtcValidation.isValid) {
         toast.error(rtcValidation.message);
         setErrors((prev) => ({ ...prev, rtcDni: rtcValidation.message }));
-        setIsValidating(false);
-        return;
-      }
-      if (!ExpoValidation.isValid) {
-        toast.error(ExpoValidation.message);
-        setErrors((prev) => ({
-          ...prev,
-          exponenteDni: ExpoValidation.message,
-        }));
-        setIsValidating(false);
         return;
       }
 
-      // Guardar el nombre del RTC para mostrarlo en el PDF
-      if (rtcValidation.isValid && ExpoValidation.isValid) {
-        setRtcNombre(rtcValidation.message);
-        setExpoNombre(ExpoValidation.message);
-      }
+      setRtcNombre(rtcValidation.message);
 
-      // Construir la URL completa con los parámetros
       const baseUrl = window.location.origin;
-      const url = `${baseUrl}/vale/nuevo?empresa=${empresa}&rtc=${rtcDni}&exponente=${exponenteDni}&numero=${numeroVale}`;
+      const url = `${baseUrl}/vale/nuevo?empresa=${empresa}&rtc=${rtcDni}&exponente=${expositorDni}`;
 
       setQrValue(url);
       setQrGenerated(true);
-      setIsValidating(false);
     } catch (error) {
       console.error("Error al validar RTC:", error);
       toast.error("Error al validar el RTC. Intente nuevamente.");
+    } finally {
       setIsValidating(false);
     }
   };
 
   const downloadQRCodePDF = () => {
-    if (!qrRef.current) return
-  
-    const svg = qrRef.current.querySelector("svg")
-    if (!svg) return
-  
-    const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-  
-    const img = new Image()
-    const svgData = new XMLSerializer().serializeToString(svg)
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" })
-    const url = URL.createObjectURL(svgBlob)
-  
+    if (!qrRef.current) return;
+
+    const svg = qrRef.current.querySelector("svg");
+    if (!svg) return;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+
     img.onload = () => {
-      canvas.width = img.width
-      canvas.height = img.height
-      ctx.drawImage(img, 0, 0)
-  
-      const imgData = canvas.toDataURL("image/png")
-      const empresaNombre = empresas.find((e) => e.id === empresa)?.nombre || ""
-      const fecha = new Date().toLocaleDateString()
-  
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      const imgData = canvas.toDataURL("image/png");
+      const empresaNombre = EMPRESAS.find((e) => e.id === empresa)?.nombre || "";
+      const fecha = new Date().toLocaleDateString();
+
       const pdf = generarValePDF({
         empresaNombre,
-        numeroVale,
         rtcDni,
         fecha,
         qrImgData: imgData,
-      })
-  
-      pdf.save(`vale-qr-${numeroVale}.pdf`)
-      URL.revokeObjectURL(url)
-    }
-  
-    img.src = url
-  }
+      });
 
-  const handleBackToForm = () => {
-    setQrGenerated(false);
+      pdf.save(`vale-qr-${empresaNombre}.pdf`);
+      URL.revokeObjectURL(url);
+    };
+
+    img.src = url;
   };
 
   const handleCloseModal = (newOpen: boolean) => {
     if (!newOpen && !isValidating) {
-      // Resetear el estado al cerrar
-      if (qrGenerated) {
-        setQrGenerated(false);
-      }
+      setQrGenerated(false);
       onOpenChange(false);
     }
   };
+
+  const handleBackToForm = () => setQrGenerated(false);
 
   return (
     <Dialog open={open} onOpenChange={handleCloseModal}>
@@ -218,9 +209,9 @@ export function QrGeneratorModal({
                   <SelectValue placeholder="Seleccione una empresa" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  {empresas.map((empresa) => (
-                    <SelectItem key={empresa.id} value={empresa.id}>
-                      {empresa.nombre}
+                  {EMPRESAS.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -245,16 +236,27 @@ export function QrGeneratorModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="exponenteDni-qr">DNI del Expositor</Label>
-              <Input
-                id="exponenteDni-qr"
-                value={exponenteDni}
-                onChange={(e) => setExponenteDni(e.target.value)}
-                maxLength={8}
-                placeholder="Ingrese el DNI del expositor"
-              />
-              {errors.exponenteDni && (
-                <p className="text-sm text-red-500">{errors.exponenteDni}</p>
+              <Label htmlFor="exponenteDni">Datos del Expositor</Label>
+              <Select value={expositorDni} onValueChange={setExpositorDNI}>
+                <SelectTrigger id="exponenteDni">
+                  <SelectValue placeholder="Seleccione expositor" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {loadingTecnicos ? (
+                    <SelectItem value="loading" disabled>
+                      Cargando técnicos...
+                    </SelectItem>
+                  ) : (
+                    tecnicos.map((tecnico) => (
+                      <SelectItem key={tecnico.id} value={tecnico.id}>
+                        {tecnico.id + " - " + tecnico.opcion}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {errors.expositorDni && (
+                <p className="text-sm text-red-500">{errors.expositorDni}</p>
               )}
             </div>
 
@@ -273,14 +275,9 @@ export function QrGeneratorModal({
               <QRCodeSVG value={qrValue} size={200} level="H" />
             </div>
             <p className="text-sm text-center text-gray-500">
-              Escanee este código QR para acceder directamente al registro de
-              vales con los datos precompletados.
+              Escanee este código QR para acceder directamente al registro de vales con los datos precompletados.
             </p>
-            <Button
-              onClick={downloadQRCodePDF}
-              className="w-full"
-              variant="outline"
-            >
+            <Button onClick={downloadQRCodePDF} className="w-full" variant="outline">
               <Download className="mr-2 h-4 w-4" /> Descargar PDF
             </Button>
             <Button onClick={handleBackToForm} className="w-full">

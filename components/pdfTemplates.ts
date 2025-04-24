@@ -11,13 +11,11 @@ declare module "jspdf" {
 // Plantilla original con QR
 export const generarValePDF = ({
   empresaNombre,
-  numeroVale,
   rtcDni,
   fecha,
   qrImgData,
 }: {
   empresaNombre: string
-  numeroVale: string
   rtcDni: string
   fecha: string
   qrImgData: string
