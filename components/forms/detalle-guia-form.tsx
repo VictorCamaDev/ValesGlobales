@@ -50,7 +50,7 @@ export function DetalleGuiaForm() {
   };
 
   const handleAddProduct = (product: ProductoDTO) => {
-    if (productos.length >= 4) return;
+    if (productos.length >= 8) return;
     addProducto(product);
     setShowAutocomplete(false);
   };
@@ -58,7 +58,7 @@ export function DetalleGuiaForm() {
   return (
     <div className="space-y-0">
       <h2 className="section-header">
-        LISTA DE PRODUCTOS (Máximo 4 productos)
+        LISTA DE PRODUCTOS (Máximo 8 productos)
       </h2>
       <div className="section-content">
         <div className="mb-6">
@@ -66,7 +66,7 @@ export function DetalleGuiaForm() {
             <button
               onClick={handleShowAutocomplete}
               className="btn btn-primary"
-              disabled={productos.length >= 4}
+              disabled={productos.length >= 8}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -92,9 +92,9 @@ export function DetalleGuiaForm() {
               onCancel={() => setShowAutocomplete(false)}
             />
           )}
-          {productos.length >= 4 && (
+          {productos.length >= 8 && (
             <p className="text-sm text-red-500 mt-5 bg-red-50 p-2 rounded-full text-center">
-              Solo puede añadir hasta 4 productos.
+              Solo puede añadir hasta 8 productos.
             </p>
           )}
         </div>

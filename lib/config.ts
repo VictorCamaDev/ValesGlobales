@@ -1,6 +1,4 @@
-// Configuración centralizada para las URLs de API y otras variables de entorno
 
-// URL base de la API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 // Endpoints específicos

@@ -63,7 +63,7 @@ export function LandingPage() {
 
       <footer className="bg-white py-6 border-t border-gray-200">
         <div className="container mx-auto px-4 text-center text-gray-600">
-          <p>&copy; {new Date().getFullYear()} Sistema de Vales Globales. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Grupo Silvestre. Todos los derechos reservados.</p>
         </div>
       </footer>
 

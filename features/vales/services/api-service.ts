@@ -1,4 +1,3 @@
-// Servicio para validar RTC y otras operaciones con la API
 import { API_ENDPOINTS } from "@/lib/config"
 
 interface ValidateRTCResponse {
@@ -6,14 +5,16 @@ interface ValidateRTCResponse {
   message: string
 }
 
-export async function ObtenerTecnicos() {
-  const res = await fetch(API_ENDPOINTS.OBTENER_TECNICOS)
-  if (!res.ok) throw new Error("No se pudieron obtener los tecnicos")
-  return await res.json()
+export async function ObtenerTecnicos(empresaId: string) {
+  const url = `${API_ENDPOINTS.OBTENER_TECNICOS}`;
+  const res = await fetch(url);
+
+  if (!res.ok) throw new Error("No se pudieron obtener los técnicos");
+  return await res.json();
 }
 
 export async function obtenerCultivos() {
-  const res = await fetch(API_ENDPOINTS.OBTENER_CULTIVOS);
+  const res = await fetch(API_ENDPOINTS.OBTENER_CULTIVOS);  
   if (!res.ok) throw new Error("No se pudieron obtener los cultivos");
   return res.json();
 }

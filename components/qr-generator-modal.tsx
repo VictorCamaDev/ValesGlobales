@@ -3,12 +3,11 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Download } from "lucide-react";
+import { Download } from 'lucide-react';
 import { toast } from "sonner";
 import { generarValePDF } from "./pdfTemplates";
 import {
   validateRTC,
-  validateExponente,
   ObtenerTecnicos
 } from "@/features/vales/services/api-service";
 
@@ -45,50 +44,61 @@ const EMPRESAS = [
 export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) {
   const [empresa, setEmpresa] = useState("");
   const [rtcDni, setRtcDni] = useState("");
-  const [exponenteDni, setExponenteDni] = useState("");
   const [expositorDni, setExpositorDNI] = useState("");
-  const [numeroVale, setNumeroVale] = useState("");
 
   const [rtcNombre, setRtcNombre] = useState("");
-  const [expoNombre, setExpoNombre] = useState("");
 
   const [qrValue, setQrValue] = useState("");
   const [qrGenerated, setQrGenerated] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
-  const [tecnicos, setTecnicos] = useState<any[]>([]);
-  const [loadingTecnicos, setLoadingTecnicos] = useState(true);
+  const [expositores, setExpositores] = useState<any[]>([]);
+  const [loadingExpositores, setLoadingExpositores] = useState(false);
 
   const [isValidating, setIsValidating] = useState(false);
   const [errors, setErrors] = useState({
     empresa: "",
     rtcDni: "",
     expositorDni: "",
-    numeroVale: "",
   });
 
+  // Cargar expositores cuando se selecciona una empresa
   useEffect(() => {
-    const fetchTecnicos = async () => {
+    const fetchExpositores = async () => {
+      if (!empresa) {
+        setExpositores([]);
+        return;
+      }
+
       try {
+        setLoadingExpositores(true);
         const data = await ObtenerTecnicos();
-        setTecnicos(data);
+        setExpositores(data);
       } catch (error) {
-        console.error("Error al obtener los técnicos", error);
-        toast.error("Error al obtener los técnicos");
+        console.error("Error al obtener los expositores", error);
+        toast.error("Error al obtener los expositores");
+        setExpositores([]);
       } finally {
-        setLoadingTecnicos(false);
+        setLoadingExpositores(false);
       }
     };
 
-    fetchTecnicos();
-  }, []);
+    fetchExpositores();
+  }, [empresa]);
+
+  // Limpiar expositor seleccionado cuando cambia la empresa
+  useEffect(() => {
+    if (empresa) {
+      setExpositorDNI("");
+      setErrors(prev => ({ ...prev, expositorDni: "" }));
+    }
+  }, [empresa]);
 
   const validateForm = () => {
     const newErrors = {
       empresa: "",
       rtcDni: "",
       expositorDni: "",
-      numeroVale: "",
     };
 
     let isValid = true;
@@ -101,8 +111,8 @@ export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) 
       newErrors.rtcDni = "El DNI debe tener 8 dígitos";
       isValid = false;
     }
-    if (!expositorDni || expositorDni.length !== 8) {
-      newErrors.expositorDni = "El DNI debe tener 8 dígitos";
+    if (!expositorDni) {
+      newErrors.expositorDni = "Por favor seleccione un expositor";
       isValid = false;
     }
 
@@ -117,10 +127,7 @@ export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) 
     setIsValidating(true);
 
     try {
-      const [rtcValidation, expoValidation] = await Promise.all([
-        validateRTC(rtcDni),
-        validateExponente(exponenteDni),
-      ]);
+      const rtcValidation = await validateRTC(rtcDni);
 
       if (!rtcValidation.isValid) {
         toast.error(rtcValidation.message);
@@ -183,7 +190,17 @@ export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) 
 
   const handleCloseModal = (newOpen: boolean) => {
     if (!newOpen && !isValidating) {
+      // Limpiar formulario
+      setEmpresa("");
+      setRtcDni("");
+      setExpositorDNI("");
+      setExpositores([]);
       setQrGenerated(false);
+      setErrors({
+        empresa: "",
+        rtcDni: "",
+        expositorDni: "",
+      });
       onOpenChange(false);
     }
   };
@@ -236,23 +253,39 @@ export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="exponenteDni">Datos del Expositor</Label>
-              <Select value={expositorDni} onValueChange={setExpositorDNI}>
-                <SelectTrigger id="exponenteDni">
-                  <SelectValue placeholder="Seleccione expositor" />
+              <Label htmlFor="expositorDni">Expositor</Label>
+              <Select 
+                value={expositorDni} 
+                onValueChange={setExpositorDNI}
+                disabled={!empresa || loadingExpositores}
+              >
+                <SelectTrigger id="expositorDni">
+                  <SelectValue 
+                    placeholder={
+                      !empresa 
+                        ? "Primero seleccione una empresa" 
+                        : loadingExpositores 
+                          ? "Cargando expositores..." 
+                          : "Seleccione expositor"
+                    } 
+                  />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  {loadingTecnicos ? (
+                  {loadingExpositores ? (
                     <SelectItem value="loading" disabled>
-                      Cargando técnicos...
+                      Cargando expositores...
                     </SelectItem>
-                  ) : (
-                    tecnicos.map((tecnico) => (
-                      <SelectItem key={tecnico.id} value={tecnico.id}>
-                        {tecnico.id + " - " + tecnico.opcion}
+                  ) : expositores.length > 0 ? (
+                    expositores.map((expositor) => (
+                      <SelectItem key={expositor.id} value={expositor.id}>
+                        {expositor.id} - {expositor.opcion}
                       </SelectItem>
                     ))
-                  )}
+                  ) : empresa ? (
+                    <SelectItem value="no-data" disabled>
+                      No hay expositores disponibles
+                    </SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
               {errors.expositorDni && (
@@ -261,7 +294,11 @@ export function QrGeneratorModal({ open, onOpenChange }: QrGeneratorModalProps) 
             </div>
 
             <DialogFooter>
-              <Button type="submit" className="w-full" disabled={isValidating}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isValidating || !empresa}
+              >
                 {isValidating ? "Validando..." : "Generar QR"}
               </Button>
             </DialogFooter>

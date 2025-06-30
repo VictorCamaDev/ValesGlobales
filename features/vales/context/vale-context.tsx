@@ -83,8 +83,8 @@ export function ValeProvider({ children }: { children: ReactNode }) {
       updatedProductos[existingProductIndex].cantidad = currentCantidad + 1;
       setProductos(updatedProductos);
     } else {
-      if (productos.length >= 4) {
-        toast.error("Solo puedes añadir hasta 4 productos distintos.");
+      if (productos.length >= 8) {
+        toast.error("Solo puedes añadir hasta 8 productos distintos.");
         return;
       }
   

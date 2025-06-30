@@ -26,9 +26,8 @@ import {
 } from "@/components/ui/select";
 import {
   validateRTC,
-  validateExponente,
+  ObtenerTecnicos,
 } from "@/features/vales/services/api-service";
-import { ObtenerTecnicos } from "@/features/vales/services/api-service";
 
 interface RegistroValeModalProps {
   open: boolean;
@@ -46,16 +45,13 @@ export function RegistroValeModal({
   // Estado simple para los campos del formulario
   const [empresa, setEmpresa] = useState("");
   const [rtcDni, setRtcDni] = useState("");
-  const [exponenteDni, setExponenteDni] = useState("");
   const [expositorDni, setExpositorDNI] = useState("");
-  const [numeroVale, setNumeroVale] = useState("");
 
   // Estado para errores de validación
   const [errors, setErrors] = useState({
     empresa: "",
     rtcDni: "",
     expositorDni: "",
-    numeroVale: "",
   });
 
   // Estado para las empresas
@@ -64,27 +60,39 @@ export function RegistroValeModal({
     { id: "2", nombre: "Neoagrum" },
   ];
 
-  // Estado para los técnicos
-  const [tecnicos, setTecnicos] = useState<any[]>([]);
-  const [loadingTecnicos, setLoadingTecnicos] = useState(true);
+  const [expositores, setExpositores] = useState<any[]>([]);
+  const [loadingExpositores, setLoadingExpositores] = useState(false);
 
-  // Cargar técnicos desde la API
   useEffect(() => {
-    const fetchTecnicos = async () => {
+    const fetchExpositores = async () => {
+      if (!empresa) {
+        setExpositores([]);
+        return;
+      }
+      // console.log("Empresa Seleccionada: ", empresa)
       try {
-        const data = await ObtenerTecnicos();
-        setTecnicos(data);
-        console.log(data);
+        setLoadingExpositores(true);
+        const data = await ObtenerTecnicos(empresa); 
+        setExpositores(data);
       } catch (error) {
-        console.error("Error al obtener los técnicos", error);
-        toast.error("Error al obtener los técnicos");
+        console.error("Error al obtener los expositores", error);
+        toast.error("Error al obtener los expositores");
+        setExpositores([]);
       } finally {
-        setLoadingTecnicos(false);
+        setLoadingExpositores(false);
       }
     };
 
-    fetchTecnicos();
-  }, []);
+    fetchExpositores();
+  }, [empresa]); // Se ejecuta cuando cambia la empresa
+
+  // Limpiar expositor seleccionado cuando cambia la empresa
+  useEffect(() => {
+    if (empresa) {
+      setExpositorDNI("");
+      setErrors((prev) => ({ ...prev, expositorDni: "" }));
+    }
+  }, [empresa]);
 
   // Función de validación manual
   const validateForm = () => {
@@ -92,7 +100,6 @@ export function RegistroValeModal({
       empresa: "",
       rtcDni: "",
       expositorDni: "",
-      numeroVale: "",
     };
 
     let isValid = true;
@@ -107,8 +114,8 @@ export function RegistroValeModal({
       isValid = false;
     }
 
-    if (!expositorDni || expositorDni.length !== 8) {
-      newErrors.expositorDni = "El DNI debe tener 8 dígitos";
+    if (!expositorDni) {
+      newErrors.expositorDni = "Por favor seleccione un expositor";
       isValid = false;
     }
 
@@ -155,13 +162,25 @@ export function RegistroValeModal({
     }
   };
 
+  // Función para limpiar el formulario cuando se cierra el modal
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && !isLoading && !isValidating) {
+      // Limpiar formulario
+      setEmpresa("");
+      setRtcDni("");
+      setExpositorDNI("");
+      setExpositores([]);
+      setErrors({
+        empresa: "",
+        rtcDni: "",
+        expositorDni: "",
+      });
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(newOpen) =>
-        !isLoading && !isValidating && onOpenChange(newOpen)
-      }
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Registrar Vale</DialogTitle>
@@ -205,23 +224,39 @@ export function RegistroValeModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="exponenteDni">Datos del Expositor</Label>
-            <Select value={expositorDni} onValueChange={setExpositorDNI}>
-              <SelectTrigger id="exponenteDni">
-                <SelectValue placeholder="Seleccione expositor" />
+            <Label htmlFor="expositorDni">Expositor</Label>
+            <Select
+              value={expositorDni}
+              onValueChange={setExpositorDNI}
+              disabled={!empresa || loadingExpositores}
+            >
+              <SelectTrigger id="expositorDni">
+                <SelectValue
+                  placeholder={
+                    !empresa
+                      ? "Primero seleccione una empresa"
+                      : loadingExpositores
+                      ? "Cargando expositores..."
+                      : "Seleccione expositor"
+                  }
+                />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                {loadingTecnicos ? (
+                {loadingExpositores ? (
                   <SelectItem value="loading" disabled>
-                    Cargando técnicos...
+                    Cargando expositores...
                   </SelectItem>
-                ) : (
-                  tecnicos.map((tecnico) => (
-                    <SelectItem key={tecnico.id} value={tecnico.id}>
-                      {tecnico.id + ' - ' + tecnico.opcion}
+                ) : expositores.length > 0 ? (
+                  expositores.map((expositor) => (
+                    <SelectItem key={expositor.id} value={expositor.id}>
+                      {expositor.id} - {expositor.opcion}
                     </SelectItem>
                   ))
-                )}
+                ) : empresa ? (
+                  <SelectItem value="no-data" disabled>
+                    No hay expositores disponibles
+                  </SelectItem>
+                ) : null}
               </SelectContent>
             </Select>
             {errors.expositorDni && (
@@ -233,7 +268,7 @@ export function RegistroValeModal({
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || isValidating}
+              disabled={isLoading || isValidating || !empresa}
             >
               {isValidating
                 ? "Validando..."
